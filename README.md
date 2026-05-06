@@ -1,68 +1,40 @@
 # prism-data-schema-forge
 
-`prism-data-schema-forge` treats data engineering as a local verification problem. The C++ implementation is intentionally narrow, but the fixtures and notes make the behavior explicit.
+`prism-data-schema-forge` is a C++ project in data engineering. Its focus is to build a C++ toolkit that studies schema behavior through windowed input fixtures, with late-data behavior checks and fixture-scale datasets.
 
-## Prism Data Schema Forge Checkpoints
+## Why This Exists
 
-Treat the compact fixture as the contract and the extended examples as a scratchpad. The code should stay boring enough that a change in behavior is obvious from the test output.
+The point is to make a small domain rule concrete enough that a reader can change it and immediately see what broke.
 
-## What This Is For
+## Prism Data Schema Forge Review Notes
 
-The goal is to capture the core behavior in code and make the surrounding assumptions obvious. A reader should be able to run the verifier, open the fixtures, and understand why each decision was made.
+Start with `schema drift` and `partition skew`. Those cases create the widest score spread in this repo, so they are the best quick check when the model changes.
 
-## Project Layout
+## Capabilities
 
-- `src`: primary implementation
-- `tests`: verification harness
-- `fixtures`: compact golden scenarios
-- `examples`: expanded scenario set
-- `metadata`: project constants and verification metadata
-- `docs`: operations and extension notes
-- `scripts`: local verification and audit commands
+- `fixtures/domain_review.csv` adds cases for schema drift and lineage depth.
+- `metadata/domain-review.json` records the same cases in structured form.
+- `config/review-profile.json` captures the read order and the two review questions.
+- `examples/prism-data-schema-walkthrough.md` walks through the case spread.
+- The C++ code includes a review path for `schema drift` and `partition skew`.
+- `docs/field-notes.md` explains the strongest and weakest cases.
 
-## Useful Pieces
+## Implementation Shape
 
-- Includes extended examples for pipeline state, including `surge` and `degraded`.
-- Documents quality gates tradeoffs in `docs/operations.md`.
-- Runs locally with a single verification command and no external credentials.
-- Stores project constants and verification metadata in `metadata/project.json`.
-- Adds a repository audit script that checks structure before running the language verifier.
+The implementation keeps the scoring rule plain: reward signal and confidence, preserve slack, penalize drag, then classify the result into a review lane.
 
-## Architecture Notes
+The C++ implementation avoids hidden state so fixture changes are easy to reason about.
 
-The design is intentionally direct: parse or construct a signal, score it, classify it, and verify the expected branch. This makes the repository useful for studying data engineering behavior without needing a service or database unless the language project itself is SQL. The C++ project uses a small library boundary and a compiled assertion harness.
-
-## Tooling
-
-Install C++ and run the commands from the repository root. The project does not need credentials or a hosted service.
-
-## Case Study
-
-The extended cases are not random smoke tests. `degraded` keeps pressure on the review path, while `surge` shows the model when capacity and weight are strong enough to clear the threshold.
-
-## Local Workflow
+## Local Usage
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-This runs the language-level build or test path against the compact fixture set.
+## Verification
 
-## Quality Gate
+That command is also the regression path. It verifies the domain cases and catches mismatches between the CSV, metadata, and code.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit.ps1
-```
+## Roadmap
 
-The audit command checks repository structure and README constraints before it delegates to the verifier.
-
-## Expansion Ideas
-
-- Add a short report command that prints the score breakdown for a single scenario.
-- Add malformed input fixtures so the failure path is as visible as the happy path.
-- Split the scoring constants into a typed configuration object and validate it before use.
-- Add one more data engineering fixture that focuses on a malformed or borderline input.
-
-## Scope
-
-The scoring model is simple by design. More domain-specific behavior should be added through explicit adapters or extra fixture classes rather than hidden constants.
+No external service is required. A deeper version would add more negative cases and a clearer boundary around invalid input.
